@@ -913,7 +913,7 @@ function plane(i){
   if(S.stop)return;
   if(P.run){
    P.y+=(P.ty-P.y)*.18;P.v=(P.ty-P.y)*.3;
-   if(P.hold>0){P.hold--;if(P.hold===0&&P.r<rounds.length){P.clouds=[];P.boom=null;spawn()}}
+   if(P.hold>0){P.hold--;P.clouds.forEach(c=>{if(c.hit!=='gone')c.x-=P.speed});if(P.boom)P.boom.x-=P.speed;if(P.hold===0&&P.r<rounds.length){P.clouds=[];P.boom=null;spawn()}}
    else{
     P.clouds.forEach(c=>{if(c.hit!=='gone')c.x-=P.speed});
     const px=W*.13;
