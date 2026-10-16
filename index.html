@@ -203,6 +203,219 @@ h3.pick{font-family:var(--disp);font-weight:400;font-size:26px;text-align:center
 <p id="jserr" style="margin:8px 0 0;color:#b33;font-size:13px;direction:ltr"></p></div></div>
 <script>window.onerror=function(m,s,l){var e=document.getElementById('jserr');if(e)e.textContent='Error: '+m+' (line '+l+')'};</script>
 
+<style>
+/* ===== أزرار الزاوية ونافذة الإعدادات والشهادة ===== */
+#kitBar{position:fixed;left:max(10px,env(safe-area-inset-left,0px));bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:60;display:flex;gap:8px}
+#kitBar button{width:44px;height:44px;border-radius:50%;border:3px solid #2b1a0e;background:#fffaf0;font-size:20px;line-height:1;padding:0;cursor:pointer;box-shadow:0 4px 0 #2b1a0e;-webkit-tap-highlight-color:transparent}
+#kitBar button:active{transform:translateY(3px);box-shadow:0 1px 0 #2b1a0e}
+#kitBar button.off{background:#ffd6d6}
+#kitBar button:focus-visible{outline:3px solid #ffd34e;outline-offset:2px}
+.playing #kitBar{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 62px)}
+.playing #kitBar #kitGear{display:none}
+.playing #kitBar button{width:38px;height:38px;font-size:17px}
+#kitToast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translate(-50%,-80px);background:#1d2b3a;color:#fff;border:3px solid #2b1a0e;border-radius:12px;padding:6px 16px;font:800 15px Cairo,Tahoma,sans-serif;z-index:80;transition:transform .25s;pointer-events:none;direction:rtl}
+#kitToast.on{transform:translate(-50%,0)}
+#kitModal{position:fixed;inset:0;z-index:70;background:rgba(10,20,40,.6);display:grid;place-items:center;padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));direction:rtl;font-family:Cairo,'Segoe UI',Tahoma,sans-serif}
+#kitModal .kbox{background:#fffaf0;color:#1d2b3a;border:4px solid #2b1a0e;border-radius:16px;box-shadow:0 8px 0 rgba(0,0,0,.35);width:min(560px,100%);max-height:calc(100dvh - 24px);overflow:auto;padding:14px 16px;text-shadow:none}
+#kitModal.kcert .kbox{width:min(760px,100%)}
+#kitModal h2{margin:0;font-size:22px;font-weight:900;color:#0b6e75}
+#kitModal h3{margin:0 0 8px;font-size:17px;font-weight:900;color:#c0392b}
+#kitModal section{border-top:2px dashed #e2d3c0;padding-top:10px;margin-top:10px}
+.khead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.kx{border:3px solid #2b1a0e;background:#e53935;color:#fff;border-radius:10px;width:36px;height:32px;font-weight:900;cursor:pointer;padding:0}
+.kline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0}
+.kline b{flex:1;min-width:140px;font-size:15px}
+.kmeta{margin:4px 0;font-size:13.5px;font-weight:600;color:#5b4a3a;line-height:1.7}
+.kerr{color:#c62828;font-weight:800;min-height:1.4em;margin:4px 0}
+.krow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.kb{font:inherit;font-weight:900;font-size:15px;border:3px solid #2b1a0e;border-radius:10px;padding:6px 14px;cursor:pointer;color:#fff;background:#3d5a73;box-shadow:0 4px 0 #2b1a0e;display:inline-block}
+.kb:active{transform:translateY(3px);box-shadow:0 1px 0 #2b1a0e}
+.kb.y{background:#ffd34e;color:#1d2b3a}.kb.p{background:#ff6f91}.kb.g{background:#3d5a73}.kb.s{font-size:13.5px;padding:4px 10px}
+.ksl{flex:1;min-width:120px;accent-color:#0f9d9a;height:28px}
+.ksw{width:54px;height:30px;border-radius:999px;border:3px solid #2b1a0e;background:#cfd8dc;position:relative;cursor:pointer;padding:0;flex:none}
+.ksw span{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid #2b1a0e;transition:right .15s}
+.ksw.on{background:#2ecc71}.ksw.on span{right:26px}
+.kin,.kpw{font:inherit;font-weight:800;border:3px solid #2b1a0e;border-radius:10px;padding:5px 10px;color:#1d2b3a;background:#fff;min-width:0;flex:1}
+.kpw{display:block;width:200px;max-width:100%;margin:10px auto 0;text-align:center;font-size:24px;letter-spacing:6px}
+.kcimg{display:block;width:100%;height:auto;border-radius:10px;border:3px solid #2b1a0e;margin-top:10px;-webkit-touch-callout:default}
+</style>
+<script>window.KIT_CFG={"id": "verb", "prefix": ["mu3tal-"], "title": "مغامرة الفعل المعتل", "fem": false, "accent": "#0f9d9a", "accent2": "#ff8a3d", "sign": ["معلم اللغة العربية: أ. خالد الحمري", "مدير المدرسة: أ. حمود أحمد"]};
+/* ===== عُدّة مشتركة: الصوت والموسيقى والإعدادات والنسخ الاحتياطي والشهادات ===== */
+(function(){
+const C=window.KIT_CFG||{id:'game',prefix:[],title:'اللعبة',fem:false,accent:'#0f9d9a',accent2:'#ffd34e',sign:[]};
+const KEY=C.id+'-settings';
+const DEF={master:.8,muted:false,sfxOn:true,sfx:.9,musicOn:true,music:.5,bright:1,pw:'1234',lock:true};
+let S=Object.assign({},DEF,(()=>{try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return{}}})());
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const $k=id=>document.getElementById(id);
+const AR=n=>String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
+const escH=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const vSfx=()=>S.muted||!S.sfxOn?0:S.master*S.sfx;
+const vMus=()=>S.muted||!S.musicOn?0:S.master*S.music*.45;
+
+/* ---------- المؤثرات: كل لعبة تمرّر صوتها من هنا ---------- */
+const outs=[];
+window.SND={out(ctx){if(!ctx.__kit){const g=ctx.createGain();g.gain.value=vSfx();g.connect(ctx.destination);ctx.__kit=g;outs.push(g)}return ctx.__kit}};
+
+/* ---------- موسيقى الخلفية (تُولَّد داخل الصفحة) ---------- */
+let mctx=null,mg=null,timer=null,step=0,nextT=0,started=false;
+const BPM=118,SP=60/BPM/2,mid=m=>440*Math.pow(2,(m-69)/12);
+const MEL=[76,79,84,79,77,81,84,81,76,79,83,86,84,79,76,74, 72,76,79,76,74,77,81,77,79,76,74,72,71,74,79,null,
+           76,null,79,81,79,76,72,null,74,77,81,77,76,74,72,null,72,76,79,84,83,81,79,77,76,74,72,74,72,null,null,null];
+const BAS=[48,55,52,55,53,57,60,57,48,55,52,55,55,59,62,59, 45,52,48,52,53,57,60,57,55,59,62,59,48,55,48,null,
+           48,55,52,55,53,57,60,57,50,53,57,53,55,59,62,59,45,52,48,52,53,57,60,57,55,59,55,50,48,null,48,null];
+function note(f,t,d,type,v){const o=mctx.createOscillator(),g=mctx.createGain();o.type=type;o.frequency.value=f;o.connect(g);g.connect(mg);
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.015);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.start(t);o.stop(t+d+.02)}
+function hat(t,v){const n=mctx.createBufferSource(),b=mctx.createBuffer(1,mctx.sampleRate*.05,mctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+ const hp=mctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=6000;const g=mctx.createGain();g.gain.value=v;n.buffer=b;n.connect(hp);hp.connect(g);g.connect(mg);n.start(t)}
+function tick(){if(!mctx)return;while(nextT<mctx.currentTime+.25){const i=step%MEL.length;
+  if(MEL[i])note(mid(MEL[i]),nextT,SP*.9,'square',.11);
+  if(BAS[i])note(mid(BAS[i]),nextT,SP*1.6,'triangle',.22);
+  if(i%2===0)hat(nextT,.05);
+  nextT+=SP;step++}}
+function musicStart(){
+ if(vMus()===0)return musicPause();
+ try{if(!mctx){mctx=new (window.AudioContext||window.webkitAudioContext)();mg=mctx.createGain();mg.gain.value=vMus();mg.connect(mctx.destination);nextT=mctx.currentTime+.1}
+  if(mctx.state!=='running')mctx.resume();if(!timer)timer=setInterval(tick,60);started=true}catch(e){}}
+function musicPause(){if(timer){clearInterval(timer);timer=null}if(mctx&&mctx.state==='running')mctx.suspend()}
+const gesture=()=>{if(!started&&vMus()>0)musicStart()};
+['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,gesture,{passive:true}));
+document.addEventListener('visibilitychange',()=>{if(document.hidden)musicPause();else if(started&&vMus()>0)musicStart()});
+
+function apply(){
+ outs.forEach(g=>{try{g.gain.value=vSfx()}catch(e){}});
+ if(mg)try{mg.gain.setTargetAtTime(vMus(),mctx.currentTime,.05)}catch(e){}
+ if(vMus()===0)musicPause();else if(started)musicStart();
+ document.documentElement.style.filter=S.bright===1?'':`brightness(${S.bright})`;
+ const m=$k('kitMute');if(m){m.textContent=S.muted?'🔇':'🔊';m.setAttribute('aria-label',S.muted?'تشغيل الصوت':'كتم الصوت');m.classList.toggle('off',S.muted)}
+}
+function testSfx(){let c;try{c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){return}const out=SND.out(c);
+ [523,659,784,1046].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.value=f;o.connect(g);g.connect(out);const t=c.currentTime+i*.1;g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.start(t);o.stop(t+.22)});
+ setTimeout(()=>{try{c.close()}catch(e){}},1200)}
+function testMusic(){const was=started;musicStart();started=true;if(vMus()===0)toast('موسيقى الخلفية مغلقة أو مستواها صفر')}
+
+/* ---------- حفظ ملف للجهاز ---------- */
+async function saveFile(name,blob){
+ try{const dl=window.claude&&claude.use?await claude.use('downloads'):null;if(dl){await dl.save({filename:name,data:blob});return true}}catch(e){if(e&&e.code==='declined')return false}
+ try{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return true}catch(e){return false}
+}
+function toast(t){let d=$k('kitToast');if(!d){d=document.createElement('div');d.id='kitToast';document.body.appendChild(d)}d.textContent=t;d.classList.add('on');clearTimeout(d._t);d._t=setTimeout(()=>d.classList.remove('on'),2600)}
+
+/* ---------- أزرار الزاوية ---------- */
+function bar(){if($k('kitBar'))return;const b=document.createElement('div');b.id='kitBar';
+ b.innerHTML='<button id="kitMute" aria-label="كتم الصوت">🔊</button><button id="kitGear" aria-label="الإعدادات">⚙️</button>';
+ document.body.appendChild(b);
+ $k('kitMute').onclick=e=>{e.stopPropagation();S.muted=!S.muted;save();apply();if(!S.muted){started=true;musicStart()}toast(S.muted?'🔇 تم كتم الصوت':'🔊 تم تشغيل الصوت')};
+ $k('kitGear').onclick=e=>{e.stopPropagation();openSettings()};apply()}
+
+/* ---------- نافذة ---------- */
+function modal(html,cls){closeModal();const m=document.createElement('div');m.id='kitModal';m.className=cls||'';m.innerHTML=`<div class="kbox" role="dialog" aria-modal="true">${html}</div>`;
+ document.body.appendChild(m);m.addEventListener('pointerdown',e=>{if(e.target===m)closeModal()});return m}
+function closeModal(){const m=$k('kitModal');if(m)m.remove()}
+addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+/* ---------- الإعدادات ---------- */
+let unlocked=false;
+function openSettings(){
+ if(S.lock&&!unlocked){
+  modal(`<h2>🔒 الإعدادات محميّة</h2><p class="kmeta">أدخل كلمة سر الإعدادات</p>
+   <input id="kPw" type="password" inputmode="numeric" autocomplete="off" maxlength="20" class="kpw" aria-label="كلمة السر">
+   <p id="kPwMsg" class="kerr"></p><div class="krow"><button class="kb g" id="kX">إلغاء</button><button class="kb y" id="kOk">دخول</button></div>`);
+  const i=$k('kPw');setTimeout(()=>i.focus(),50);
+  const go=()=>{if(i.value===S.pw){unlocked=true;openSettings()}else{$k('kPwMsg').textContent='كلمة السر غير صحيحة';i.value=''}};
+  $k('kOk').onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()};$k('kX').onclick=closeModal;return}
+ const sw=(id,on)=>`<button class="ksw ${on?'on':''}" id="${id}" role="switch" aria-checked="${on}"><span></span></button>`;
+ const sl=(id,v,min,max)=>`<input type="range" id="${id}" min="${min}" max="${max}" value="${Math.round(v*100)}" class="ksl">`;
+ modal(`<div class="khead"><h2>⚙️ الإعدادات</h2><button class="kx" id="kClose" aria-label="إغلاق">✖</button></div>
+  <section><h3>🔊 الصوت</h3>
+   <div class="kline"><b>كتم كل الأصوات</b>${sw('kMuted',S.muted)}</div>
+   <div class="kline"><b>مستوى الصوت العام</b>${sl('kMaster',S.master,0,100)}<span id="kMasterV">${AR(Math.round(S.master*100))}٪</span></div>
+   <div class="kline"><b>المؤثرات الصوتية</b>${sw('kSfxOn',S.sfxOn)}${sl('kSfx',S.sfx,0,100)}<button class="kb s" id="kTSfx">▶ تجربة</button></div>
+   <div class="kline"><b>موسيقى الخلفية</b>${sw('kMusOn',S.musicOn)}${sl('kMus',S.music,0,100)}<button class="kb s" id="kTMus">▶ تجربة</button></div>
+  </section>
+  <section><h3>☀️ الإضاءة</h3>
+   <div class="kline"><b>سطوع الشاشة</b>${sl('kBright',S.bright,50,130)}<span id="kBrightV">${AR(Math.round(S.bright*100))}٪</span></div>
+  </section>
+  <section><h3>💾 النسخة الاحتياطية</h3>
+   <p class="kmeta">تحفظ تقدّم ${C.fem?'الطالبات':'الطلاب'} على هذا الجهاز (العوالم والنجوم والعملات والكنوز والأوسمة والشخصيات والنتائج) مع الإعدادات في ملف واحد، يمكن استرجاعه على الجهاز نفسه أو على جهاز آخر.</p>
+   <div class="krow"><button class="kb y" id="kBak">⬇ تنزيل نسخة احتياطية</button><label class="kb g" for="kRes">⬆ استرجاع من نسخة</label><input type="file" id="kRes" accept=".json,application/json" hidden></div>
+   <p id="kBakMsg" class="kmeta"></p>
+  </section>
+  <section><h3>🔒 كلمة سر الإعدادات</h3>
+   <div class="kline"><b>طلب كلمة السر عند فتح الإعدادات</b>${sw('kLock',S.lock)}</div>
+   <div class="kline"><input id="kNew1" type="password" inputmode="numeric" maxlength="20" placeholder="كلمة سر جديدة" class="kin" aria-label="كلمة سر جديدة"><input id="kNew2" type="password" inputmode="numeric" maxlength="20" placeholder="أعد كتابتها" class="kin" aria-label="تأكيد كلمة السر"><button class="kb s" id="kPwSave">حفظ</button></div>
+   <p id="kPwMsg2" class="kmeta"></p>
+  </section>
+  <section><h3>♻️ الإعدادات الأصلية</h3>
+   <p class="kmeta">يعيد الصوت والموسيقى والإضاءة وكلمة السر (١٢٣٤) إلى ما كانت عليه أول مرة، ولا يمسح تقدّم ${C.fem?'الطالبات':'الطلاب'}.</p>
+   <div class="krow" id="kDefRow"><button class="kb p" id="kDef">♻️ الرجوع إلى الإعدادات الأصلية</button></div>
+  </section>`,'kset');
+ const bindSw=(id,key,after)=>{$k(id).onclick=()=>{S[key]=!S[key];$k(id).classList.toggle('on',S[key]);$k(id).setAttribute('aria-checked',S[key]);save();apply();after&&after()}};
+ bindSw('kMuted','muted',()=>{if(!S.muted)musicStart()});bindSw('kSfxOn','sfxOn');bindSw('kMusOn','musicOn',()=>{if(S.musicOn){started=true;musicStart()}});bindSw('kLock','lock');
+ const bindSl=(id,key,lab,min)=>{$k(id).oninput=e=>{S[key]=e.target.value/100;if(lab)$k(lab).textContent=AR(e.target.value)+'٪';apply()};$k(id).onchange=save};
+ bindSl('kMaster','master','kMasterV');bindSl('kSfx','sfx');bindSl('kMus','music');bindSl('kBright','bright','kBrightV');
+ $k('kTSfx').onclick=testSfx;$k('kTMus').onclick=testMusic;
+ $k('kClose').onclick=closeModal;
+ $k('kBak').onclick=async()=>{const data={app:C.id,title:C.title,v:1,at:new Date().toISOString(),keys:{}};
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k===KEY||C.prefix.some(p=>k.startsWith(p)))data.keys[k]=localStorage.getItem(k)}
+  const d=new Date(),nm=`نسخة_${C.title.replace(/\s+/g,'_')}_${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}.json`;
+  const ok=await saveFile(nm,new Blob([JSON.stringify(data,null,1)],{type:'application/json'}));$k('kBakMsg').textContent=ok?'✅ تم تنزيل النسخة الاحتياطية':'تعذّر التنزيل من هنا.'};
+ $k('kRes').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const data=JSON.parse(r.result);
+   if(!data||data.app!==C.id||!data.keys)throw 0;
+   const row=$k('kBakMsg');row.innerHTML=`سيُستبدل التقدّم الحالي على هذا الجهاز بنسخة ${escH(new Date(data.at).toLocaleDateString('ar-BH'))}. <button class="kb p s" id="kResY">نعم، استرجع</button> <button class="kb g s" id="kResN">إلغاء</button>`;
+   $k('kResN').onclick=()=>{row.textContent=''};
+   $k('kResY').onclick=()=>{for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(C.prefix.some(p=>k.startsWith(p)))localStorage.removeItem(k)}
+    Object.entries(data.keys).forEach(([k,v])=>{try{localStorage.setItem(k,v)}catch(e){}});row.textContent='✅ تم الاسترجاع. ستُعاد تحميل اللعبة…';setTimeout(()=>location.reload(),1200)};
+  }catch(err){$k('kBakMsg').textContent='هذا الملف ليس نسخة احتياطية من '+C.title+'.'}};r.readAsText(f);e.target.value=''};
+ $k('kPwSave').onclick=()=>{const a=$k('kNew1').value.trim(),b=$k('kNew2').value.trim(),m=$k('kPwMsg2');
+  if(a.length<3){m.textContent='كلمة السر قصيرة: ٣ أحرف أو أرقام على الأقل.';return}if(a!==b){m.textContent='الكلمتان غير متطابقتين.';return}
+  S.pw=a;save();$k('kNew1').value=$k('kNew2').value='';m.textContent='✅ حُفظت كلمة السر الجديدة.'};
+ $k('kDef').onclick=()=>{$k('kDefRow').innerHTML='<span class="kmeta">متأكد؟</span> <button class="kb p" id="kDefY">نعم</button> <button class="kb g" id="kDefN">إلغاء</button>';
+  $k('kDefN').onclick=openSettings;$k('kDefY').onclick=()=>{S=Object.assign({},DEF);save();apply();toast('♻️ أُعيدت الإعدادات الأصلية');openSettings()}};
+}
+
+/* ---------- الشهادة ---------- */
+function wrapLines(x,t,maxW){const w=t.split(' '),L=[];let cur='';w.forEach(s=>{const tt=cur?cur+' '+s:s;if(x.measureText(tt).width>maxW&&cur){L.push(cur);cur=s}else cur=tt});if(cur)L.push(cur);return L}
+async function drawCert(o){
+ try{await document.fonts.ready}catch(e){}
+ const W=1600,H=1130,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+ x.fillStyle='#fffaf0';x.fillRect(0,0,W,H);
+ const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,C.accent);g.addColorStop(1,C.accent2);
+ x.strokeStyle=g;x.lineWidth=36;x.strokeRect(30,30,W-60,H-60);x.strokeStyle='#2b1a0e';x.lineWidth=4;x.strokeRect(58,58,W-116,H-116);
+ x.strokeStyle=C.accent2;x.lineWidth=2;x.setLineDash([10,10]);x.strokeRect(76,76,W-152,H-152);x.setLineDash([]);
+ [[100,100],[W-100,100],[100,H-100],[W-100,H-100]].forEach(([a,b])=>{x.fillStyle=C.accent2;x.beginPath();for(let k=0;k<10;k++){const r=k%2?14:34,ang=-Math.PI/2+k*Math.PI/5;x.lineTo(a+Math.cos(ang)*r,b+Math.sin(ang)*r)}x.closePath();x.fill();x.strokeStyle='#2b1a0e';x.lineWidth=3;x.stroke()});
+ let y=120;
+ if(o.hdr){try{const im=new Image();im.src=o.hdr;await im.decode();const ih=110,iw=im.width*ih/im.height;x.drawImage(im,(W-iw)/2,y,iw,ih);y+=ih+20}catch(e){y+=10}}
+ x.direction='rtl';x.textAlign='center';x.textBaseline='alphabetic';
+ x.fillStyle=C.accent;x.font="700 92px Lemonada, Cairo, sans-serif";x.fillText('شهادة إنجاز',W/2,y+90);y+=130;
+ x.fillStyle='#4b3b2b';x.font="700 38px Cairo, sans-serif";x.fillText(C.fem?'تُمنح هذه الشهادة للطالبة':'تُمنح هذه الشهادة للطالب',W/2,y+30);y+=60;
+ x.font="900 84px Cairo, sans-serif";const nameW=Math.min(W-320,x.measureText(o.name).width+80);
+ x.fillStyle='rgba(0,0,0,.05)';x.fillRect((W-nameW)/2,y+4,nameW,108);x.fillStyle='#1d2b3a';x.fillText(o.name,W/2,y+90);
+ x.strokeStyle=C.accent2;x.lineWidth=5;x.beginPath();x.moveTo((W-nameW)/2+20,y+122);x.lineTo((W+nameW)/2-20,y+122);x.stroke();y+=170;
+ x.fillStyle='#4b3b2b';x.font="700 40px Cairo, sans-serif";
+ wrapLines(x,o.text,W-360).forEach((ln,i)=>{x.fillText(ln,W/2,y+i*58)});y+=wrapLines(x,o.text,W-360).length*58+20;
+ if(o.stars!=null){x.font="80px sans-serif";x.fillText([0,1,2].map(k=>k<o.stars?'⭐':'☆').join(' '),W/2,y+70);y+=100}
+ if(o.score)x.font="800 36px Cairo, sans-serif",x.fillStyle=C.accent,x.fillText(o.score,W/2,y+30);
+ x.fillStyle='#4b3b2b';x.font="700 30px Cairo, sans-serif";
+ const date=new Date().toLocaleDateString('ar-BH',{year:'numeric',month:'long',day:'numeric'});
+ x.textAlign='right';x.fillText('التاريخ: '+date,W-150,H-150);
+ x.textAlign='left';(C.sign||[]).forEach((s,i)=>x.fillText(s,150,H-150-((C.sign.length-1-i)*44)));
+ x.textAlign='center';x.font="700 28px Cairo, sans-serif";x.fillStyle=C.accent;x.fillText(C.title+' • لغتي العربية • الصف السادس',W/2,H-100);
+ return c;
+}
+async function certificate(o){
+ if(!o||!o.name)return;
+ modal('<p class="kmeta" style="text-align:center">⏳ جارٍ تجهيز الشهادة…</p>','kcert');
+ const cv=await drawCert(o);let url='';try{url=cv.toDataURL('image/png')}catch(e){}
+ modal(`<div class="khead"><h2>🎓 شهادة ${C.fem?'إنجازكِ':'إنجازك'}</h2><button class="kx" id="kClose" aria-label="إغلاق">✖</button></div>
+  <img src="${url}" alt="شهادة باسم ${escH(o.name)}" class="kcimg"><div class="krow"><button class="kb y" id="kCDl">⬇ تنزيل الشهادة</button><button class="kb g" id="kCX">متابعة اللعب</button></div><p class="kmeta" id="kCMsg"></p>`,'kcert');
+ $k('kClose').onclick=$k('kCX').onclick=closeModal;
+ $k('kCDl').onclick=()=>cv.toBlob(async b=>{const ok=await saveFile(`شهادة_${o.name.replace(/\s+/g,'_')}.png`,b);$k('kCMsg').textContent=ok?'✅ تم تنزيل الشهادة':'تعذّر التنزيل من هنا. يمكنك الضغط مطوّلًا على الصورة لحفظها.'},'image/png');
+}
+window.KIT={certificate,openSettings,toast,settings:()=>Object.assign({},S)};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bar);else bar();
+})();
+</script>
 <script>
 /* أسماء طلاب الصف السادس — تُملأ من ملف المدرسة */
 const STUDENTS=["AHAD MOHAMMAD AMJID MOHAMMAD AMJID SA", "MOHAMMAD SHUJA ARSALAN BAIG", "أحمد صالح هرم الجعاطه", "احمد مبارك احمد سالم", "أحمد محمد احمد البوعركي", "اصيل ابراهيم صالح الزهراني", "بكيل فهمي علي التام", "حمد عبدالرحمن امحان العماش", "خالد عبدالرشيد عبدالوحيد عبدالمقتدر", "راشد عبدالله صالح عبدالله", "سلمان محمد صالح البيضاني", "صقر مسعود عذاب المحمد", "عادل نسيم نسيم عبدالقادر", "عبدالرحمن عبدالرحيم الله بخش رايب", "عبدالرحمن محمود عبدالله محمد", "علي حمدي علي الخضيري", "علي فاروق جبر عمقه", "عماد احمد نهار العنزي", "عمر عبدالجليل عبدالجليل", "عمر ناصر غلام البلوشي", "عمر يوسف عبدالرحمن احمد", "عيد سالم عيد ثاني", "فهد احمد ابراهيم مرهش", "ماجد وسيم تاج محمد محمد", "محمد احمد محمد النوبي", "محمد أمين رضا باطر", "محمد علي يحيى الخلاقي", "محمد فواز عيسى الدوسري", "وسام ناصر حسين الحاج", "يعقوب حسن علي العجي", "يعقوب محمد قاسم عبدالله"];
@@ -288,7 +501,7 @@ function showTeacherBtn(){return isTeacher||(dbReady&&!DB)}
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 let ac;function beep(kind){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime;
  const seq=kind==='ok'?[660,880,1100]:kind==='no'?[240,180]:kind==='win'?[523,659,784,1046]:[440];
- seq.forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;o.connect(g);g.connect(ac.destination);const s=t+i*.09;g.gain.setValueAtTime(.16,s);g.gain.exponentialRampToValueAtTime(.001,s+.22);o.start(s);o.stop(s+.24)})}catch(e){}}
+ seq.forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;o.connect(g);g.connect(window.SND?SND.out(ac):ac.destination);const s=t+i*.09;g.gain.setValueAtTime(.16,s);g.gain.exponentialRampToValueAtTime(.001,s+.22);o.start(s);o.stop(s+.24)})}catch(e){}}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function home(){
@@ -696,10 +909,11 @@ function finish(){
   <div class="stats"><span class="pill">🪙 ${AR(points)} نقطة</span><span class="pill">🔥 أطول سلسلة ${AR(bestStreak)}</span><span class="pill">${MODES[MODE].icon} ${MODES[MODE].name}</span>${extraStat||''}</div>
   ${AW.lvUp?`<div class="lvup">⬆️ ارتقيت إلى مستوى <b>${AW.lvUp.icon} ${AW.lvUp.name}</b>!</div>`:''}
   ${AW.fresh.length?`<div class="newb"><h3>🎉 أوسمة جديدة!</h3><div class="bgrid">${AW.fresh.map(b=>`<div class="bdg got pop"><span class="bi">${b.i}</span><b>${b.n}</b><small>${b.d}</small></div>`).join('')}</div></div>`:''}
-  <div class="btns"><button class="b3d p" id="again">العب مجددًا 🔁</button><button class="b3d" id="hm">العوالم 🗺️</button></div>
+  <div class="btns">${st>=1?'<button class="b3d o" id="cert">🎓 شهادتي</button>':''}<button class="b3d p" id="again">العب مجددًا 🔁</button><button class="b3d" id="hm">العوالم 🗺️</button></div>
   <p class="saved" id="sv">⏳ جارٍ حفظ النتيجة…</p></div>`;
  document.getElementById('again').onclick=()=>playMode(L.idx,MODE);document.getElementById('hm').onclick=()=>modes(L.idx);document.getElementById('hm').textContent='الألعاب 🎮';
  if(st>=2||AW.fresh.length){beep('win');confetti()}
+ if(st>=1&&window.KIT){const co={name:player,stars:st,score:'الدرجة: '+AR(correct)+' من '+AR(n),hdr:HDR,text:'لإتمامه «'+MODES[MODE].name+'» في عالم «'+L.name+'» من مغامرة الفعل المعتل بنجاح'};document.getElementById('cert').onclick=()=>KIT.certificate(co);setTimeout(()=>{if(document.getElementById('cert'))KIT.certificate(co)},1500)}
  const rec={name:player,lesson:L.idx,mode:MODE,badges:AW.p.badges.length,newBadges:AW.fresh.map(b=>b.i+' '+b.n),correct,total:n,points,streak:bestStreak,miss:(MODE==='quiz'||MODE==='adv'?qs.map((q,j)=>res[j]===false?q.s.replace(/<[^>]+>/g,'').replace('؟','____'):null):missList).filter(Boolean).slice(0,10),at:Date.now()};
  saveResult(rec).then(w=>{const s=document.getElementById('sv');if(s)s.textContent=w==='shared'?'✅ وصلت نتيجتك إلى المعلم':'✅ حُفظت النتيجة على هذا الجهاز'});
 }
