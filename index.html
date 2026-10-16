@@ -265,19 +265,32 @@ window.SND={out(ctx){if(!ctx.__kit){const g=ctx.createGain();g.gain.value=vSfx()
 
 /* ---------- موسيقى الخلفية (تُولَّد داخل الصفحة) ---------- */
 let mctx=null,mg=null,timer=null,step=0,nextT=0,started=false;
-const BPM=118,SP=60/BPM/2,mid=m=>440*Math.pow(2,(m-69)/12);
+const mid=m=>440*Math.pow(2,(m-69)/12);let SP=60/118/2;
 const MEL=[76,79,84,79,77,81,84,81,76,79,83,86,84,79,76,74, 72,76,79,76,74,77,81,77,79,76,74,72,71,74,79,null,
            76,null,79,81,79,76,72,null,74,77,81,77,76,74,72,null,72,76,79,84,83,81,79,77,76,74,72,74,72,null,null,null];
 const BAS=[48,55,52,55,53,57,60,57,48,55,52,55,55,59,62,59, 45,52,48,52,53,57,60,57,55,59,62,59,48,55,48,null,
            48,55,52,55,53,57,60,57,50,53,57,53,55,59,62,59,45,52,48,52,53,57,60,57,55,59,55,50,48,null,48,null];
+const _=null;
+const TRACKS={
+ menu:{bpm:118,mel:MEL,bas:BAS,lead:'square',hat:1},
+ plains:{bpm:124,lead:'square',hat:1,mel:[72,_,76,79,_,76,81,79,77,_,74,_,72,_,_,_,74,_,77,81,_,79,77,76,74,_,71,_,72,_,_,_],bas:[48,_,55,_,52,_,55,_,53,_,57,_,48,_,55,_,50,_,57,_,53,_,57,_,43,_,50,_,48,_,55,_]},
+ desert:{bpm:108,lead:'triangle',hat:1,mel:[74,_,75,74,72,_,70,72,74,_,_,77,75,74,72,_,70,72,74,75,77,_,75,74,72,70,69,_,70,_,_,_],bas:[50,_,57,_,50,_,57,_,48,_,55,_,48,_,55,_,46,_,53,_,46,_,53,_,45,_,52,_,50,_,_,_]},
+ lava:{bpm:132,lead:'square',hat:1,mel:[76,76,79,76,74,76,71,_,76,76,79,81,83,81,79,_,72,72,76,72,71,72,67,_,74,74,78,74,71,_,_,_],bas:[40,40,52,40,40,40,52,40,40,40,52,40,40,40,52,40,36,36,48,36,36,36,48,36,38,38,50,38,35,35,47,35]},
+ sky:{bpm:100,lead:'triangle',hat:0,mel:[79,_,83,_,86,_,83,_,84,_,81,_,79,_,_,_,76,_,79,_,83,_,81,79,78,_,74,_,79,_,_,_],bas:[55,_,62,_,59,_,62,_,57,_,64,_,60,_,64,_,52,_,59,_,55,_,59,_,50,_,57,_,55,_,62,_]},
+ snow:{bpm:96,lead:'sine',hat:0,mel:[69,_,72,_,76,_,74,72,71,_,72,_,74,_,_,_,72,_,76,_,79,_,77,76,74,_,71,_,69,_,_,_],bas:[45,_,52,_,57,_,52,_,43,_,50,_,55,_,50,_,41,_,48,_,53,_,48,_,40,_,47,_,45,_,52,_]},
+ night:{bpm:104,lead:'triangle',hat:1,mel:[62,_,65,69,_,67,65,_,64,_,62,_,61,_,_,_,62,_,65,69,72,_,70,69,67,_,65,64,62,_,_,_],bas:[38,_,_,45,38,_,_,45,37,_,_,45,37,_,_,45,34,_,_,41,34,_,_,41,33,_,_,40,38,_,_,_]},
+ boss:{bpm:150,lead:'sawtooth',hat:1,mel:[64,67,71,67,64,67,71,74,72,71,67,64,66,67,66,63,64,67,71,76,74,71,72,71,69,67,66,67,64,_,64,_],bas:[40,52,40,52,40,52,40,52,36,48,36,48,35,47,35,47,40,52,40,52,40,52,40,52,36,48,38,50,40,52,40,52]}
+};
+let TR=TRACKS.menu,trName='menu';
+function setTrack(n){const t=TRACKS[n];if(!t||n===trName)return;trName=n;TR=t;SP=60/t.bpm/2;step=0;if(mg&&mctx){try{const now=mctx.currentTime;mg.gain.cancelScheduledValues(now);mg.gain.setValueAtTime(0,now);mg.gain.linearRampToValueAtTime(vMus(),now+.6)}catch(e){}nextT=Math.max(nextT,mctx.currentTime+.08)}}
 function note(f,t,d,type,v){const o=mctx.createOscillator(),g=mctx.createGain();o.type=type;o.frequency.value=f;o.connect(g);g.connect(mg);
  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.015);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.start(t);o.stop(t+d+.02)}
 function hat(t,v){const n=mctx.createBufferSource(),b=mctx.createBuffer(1,mctx.sampleRate*.05,mctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
  const hp=mctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=6000;const g=mctx.createGain();g.gain.value=v;n.buffer=b;n.connect(hp);hp.connect(g);g.connect(mg);n.start(t)}
-function tick(){if(!mctx)return;while(nextT<mctx.currentTime+.25){const i=step%MEL.length;
-  if(MEL[i])note(mid(MEL[i]),nextT,SP*.9,'square',.16);
-  if(BAS[i])note(mid(BAS[i]),nextT,SP*1.6,'triangle',.3);
-  if(i%2===0)hat(nextT,.07);
+function tick(){if(!mctx)return;while(nextT<mctx.currentTime+.25){const M=TR.mel,Bs=TR.bas,i=step%M.length;
+  if(M[i])note(mid(M[i]),nextT,SP*.9,TR.lead,TR.lead==='sawtooth'?.09:TR.lead==='sine'?.22:TR.lead==='triangle'?.24:.16);
+  if(Bs[i%Bs.length])note(mid(Bs[i%Bs.length]),nextT,SP*1.6,'triangle',.3);
+  if(TR.hat&&i%2===0)hat(nextT,.07);
   nextT+=SP;step++}}
 function musicStart(){
  if(vMus()===0)return musicPause();
@@ -333,15 +346,26 @@ function closeModal(){const m=$k('kitModal');if(m)m.remove()}
 addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 
 /* ---------- الإعدادات ---------- */
-let unlocked=false;
+/* كلمة سر المعلم: تحمي صفحة المعلم فقط، والإعدادات مفتوحة للجميع */
+const PKEY='__tpin_'+C.id;
+function getPin(){try{return localStorage.getItem(PKEY)||(S.pw&&S.pw!=='1234'?S.pw:'1234')}catch(e){return '1234'}}
+function checkPin(v){return String(v||'').trim()===getPin()}
+function changePin(){
+ modal(`<div class="khead"><h2>🔑 كلمة سر صفحة المعلم</h2><button class="kx" id="kClose" aria-label="إغلاق">✖</button></div>
+  <p class="kmeta">لا يدخل صفحة المعلم إلا من يعرف كلمة السر. تُحفظ على هذا الجهاز.</p>
+  <div class="kline"><b>كلمة السر الحالية</b><input id="kOld" type="password" inputmode="numeric" maxlength="20" class="kin" autocomplete="off" aria-label="كلمة السر الحالية"></div>
+  <div class="kline"><b>كلمة السر الجديدة</b><input id="kNew1" type="password" inputmode="numeric" maxlength="20" class="kin" autocomplete="off" aria-label="كلمة السر الجديدة"></div>
+  <div class="kline"><b>أعد كتابتها</b><input id="kNew2" type="password" inputmode="numeric" maxlength="20" class="kin" autocomplete="off" aria-label="تأكيد كلمة السر"></div>
+  <p id="kPwMsg2" class="kerr" aria-live="polite"></p>
+  <div class="krow"><button class="kb g" id="kX">إلغاء</button><button class="kb y" id="kPwSave">حفظ كلمة السر</button></div>`);
+ setTimeout(()=>{try{$k('kOld').focus()}catch(e){}},50);
+ $k('kClose').onclick=$k('kX').onclick=closeModal;
+ $k('kPwSave').onclick=()=>{const o=$k('kOld').value.trim(),a=$k('kNew1').value.trim(),b=$k('kNew2').value.trim(),m=$k('kPwMsg2');
+  if(!checkPin(o)){m.textContent='كلمة السر الحالية غير صحيحة.';return}
+  if(a.length<3){m.textContent='كلمة السر قصيرة: ٣ أحرف أو أرقام على الأقل.';return}if(a!==b){m.textContent='الكلمتان الجديدتان غير متطابقتين.';return}
+  try{localStorage.setItem(PKEY,a)}catch(e){}closeModal();toast('✅ حُفظت كلمة السر الجديدة')};
+}
 function openSettings(){
- if(S.lock&&!unlocked){
-  modal(`<h2>🔒 الإعدادات محميّة</h2><p class="kmeta">أدخل كلمة سر الإعدادات</p>
-   <input id="kPw" type="password" inputmode="numeric" autocomplete="off" maxlength="20" class="kpw" aria-label="كلمة السر">
-   <p id="kPwMsg" class="kerr"></p><div class="krow"><button class="kb g" id="kX">إلغاء</button><button class="kb y" id="kOk">دخول</button></div>`);
-  const i=$k('kPw');setTimeout(()=>i.focus(),50);
-  const go=()=>{if(i.value===S.pw){unlocked=true;openSettings()}else{$k('kPwMsg').textContent='كلمة السر غير صحيحة';i.value=''}};
-  $k('kOk').onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()};$k('kX').onclick=closeModal;return}
  const sw=(id,on)=>`<button class="ksw ${on?'on':''}" id="${id}" role="switch" aria-checked="${on}"><span></span></button>`;
  const sl=(id,v,min,max)=>`<input type="range" id="${id}" min="${min}" max="${max}" value="${Math.round(v*100)}" class="ksl">`;
  modal(`<div class="khead"><h2>⚙️ الإعدادات</h2><button class="kx" id="kClose" aria-label="إغلاق">✖</button></div>
@@ -359,17 +383,12 @@ function openSettings(){
    <div class="krow"><button class="kb y" id="kBak">⬇ تنزيل نسخة احتياطية</button><label class="kb g" for="kRes">⬆ استرجاع من نسخة</label><input type="file" id="kRes" accept=".json,application/json" hidden></div>
    <p id="kBakMsg" class="kmeta"></p>
   </section>
-  <section><h3>🔒 كلمة سر الإعدادات</h3>
-   <div class="kline"><b>طلب كلمة السر عند فتح الإعدادات</b>${sw('kLock',S.lock)}</div>
-   <div class="kline"><input id="kNew1" type="password" inputmode="numeric" maxlength="20" placeholder="كلمة سر جديدة" class="kin" aria-label="كلمة سر جديدة"><input id="kNew2" type="password" inputmode="numeric" maxlength="20" placeholder="أعد كتابتها" class="kin" aria-label="تأكيد كلمة السر"><button class="kb s" id="kPwSave">حفظ</button></div>
-   <p id="kPwMsg2" class="kmeta"></p>
-  </section>
   <section><h3>♻️ الإعدادات الأصلية</h3>
-   <p class="kmeta">يعيد الصوت والموسيقى والإضاءة وكلمة السر (١٢٣٤) إلى ما كانت عليه أول مرة، ولا يمسح تقدّم ${C.fem?'الطالبات':'الطلاب'}.</p>
+   <p class="kmeta">يعيد الصوت والموسيقى والإضاءة إلى ما كانت عليه أول مرة، ولا يمسح تقدّم ${C.fem?'الطالبات':'الطلاب'}.</p>
    <div class="krow" id="kDefRow"><button class="kb p" id="kDef">♻️ الرجوع إلى الإعدادات الأصلية</button></div>
   </section>`,'kset');
  const bindSw=(id,key,after)=>{$k(id).onclick=()=>{S[key]=!S[key];$k(id).classList.toggle('on',S[key]);$k(id).setAttribute('aria-checked',S[key]);save();apply();after&&after()}};
- bindSw('kMuted','muted',()=>{if(!S.muted)musicStart()});bindSw('kSfxOn','sfxOn');bindSw('kMusOn','musicOn',()=>{if(S.musicOn){started=true;musicStart()}});bindSw('kLock','lock');
+ bindSw('kMuted','muted',()=>{if(!S.muted)musicStart()});bindSw('kSfxOn','sfxOn');bindSw('kMusOn','musicOn',()=>{if(S.musicOn){started=true;musicStart()}});
  const bindSl=(id,key,lab,min)=>{$k(id).oninput=e=>{S[key]=e.target.value/100;if(lab)$k(lab).textContent=AR(e.target.value)+'٪';apply()};$k(id).onchange=save};
  bindSl('kMaster','master','kMasterV');bindSl('kSfx','sfx');bindSl('kMus','music');bindSl('kBright','bright','kBrightV');
  $k('kTSfx').onclick=testSfx;$k('kTMus').onclick=testMusic;
@@ -385,11 +404,8 @@ function openSettings(){
    $k('kResY').onclick=()=>{for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(C.prefix.some(p=>k.startsWith(p)))localStorage.removeItem(k)}
     Object.entries(data.keys).forEach(([k,v])=>{try{localStorage.setItem(k,v)}catch(e){}});row.textContent='✅ تم الاسترجاع. ستُعاد تحميل اللعبة…';setTimeout(()=>location.reload(),1200)};
   }catch(err){$k('kBakMsg').textContent='هذا الملف ليس نسخة احتياطية من '+C.title+'.'}};r.readAsText(f);e.target.value=''};
- $k('kPwSave').onclick=()=>{const a=$k('kNew1').value.trim(),b=$k('kNew2').value.trim(),m=$k('kPwMsg2');
-  if(a.length<3){m.textContent='كلمة السر قصيرة: ٣ أحرف أو أرقام على الأقل.';return}if(a!==b){m.textContent='الكلمتان غير متطابقتين.';return}
-  S.pw=a;save();$k('kNew1').value=$k('kNew2').value='';m.textContent='✅ حُفظت كلمة السر الجديدة.'};
  $k('kDef').onclick=()=>{$k('kDefRow').innerHTML='<span class="kmeta">متأكد؟</span> <button class="kb p" id="kDefY">نعم</button> <button class="kb g" id="kDefN">إلغاء</button>';
-  $k('kDefN').onclick=openSettings;$k('kDefY').onclick=()=>{S=Object.assign({},DEF);save();apply();toast('♻️ أُعيدت الإعدادات الأصلية');openSettings()}};
+  $k('kDefN').onclick=openSettings;$k('kDefY').onclick=()=>{S=Object.assign({},DEF,{pw:S.pw});save();apply();toast('♻️ أُعيدت الإعدادات الأصلية');openSettings()}};
 }
 
 /* ---------- الشهادة ---------- */
@@ -430,7 +446,7 @@ async function certificate(o){
  $k('kClose').onclick=$k('kCX').onclick=closeModal;
  $k('kCDl').onclick=()=>cv.toBlob(async b=>{const ok=await saveFile(`شهادة_${o.name.replace(/\s+/g,'_')}.png`,b);$k('kCMsg').textContent=ok?'✅ تم تنزيل الشهادة':'تعذّر التنزيل من هنا. يمكنك الضغط مطوّلًا على الصورة لحفظها.'},'image/png');
 }
-window.KIT={certificate,openSettings,toast,settings:()=>Object.assign({},S)};
+window.KIT={checkPin,changePin,track:setTrack,certificate,openSettings,toast,settings:()=>Object.assign({},S)};
 /* تشغيل الموسيقى فور فتح الرابط: نحاول مباشرة، وإن منعها المتصفح نعرض شاشة بدء تُشغّلها بأول لمسة */
 function autoStart(){bar();if(vMus()===0)return;musicStart();
  setTimeout(()=>{if(isPlaying()||$k('kitStart'))return;const d=document.createElement('div');d.id='kitStart';
@@ -955,7 +971,7 @@ function pinGate(){
   <p class="note" id="pinMsg" style="color:#b33;min-height:1.5em"></p>
   <div class="btns" style="margin-top:6px"><button class="b3d g" id="pbk">رجوع</button><button class="b3d y" id="pgo">دخول</button></div></div></div>`;
  const inp=document.getElementById('pin');inp.focus();
- const go=()=>{if(inp.value.trim()===TEACHER_PIN){pinOk=true;results()}else{document.getElementById('pinMsg').textContent='الرقم السري غير صحيح';inp.value='';inp.focus();beep('no')}};
+ const go=()=>{if(window.KIT&&KIT.checkPin?KIT.checkPin(inp.value):inp.value.trim()===TEACHER_PIN){pinOk=true;results()}else{document.getElementById('pinMsg').textContent='الرقم السري غير صحيح';inp.value='';inp.focus();beep('no')}};
  document.getElementById('pgo').onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()};
  document.getElementById('pbk').onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}home()};
 }
@@ -991,11 +1007,11 @@ async function results(){
   <div class="tabs" role="tablist">${tabs.map(([k,t])=>`<button class="tab" role="tab" data-t="${k}" aria-selected="${rTab===k}">${t}</button>`).join('')}</div>
   ${body}
   <div class="tools"><button class="b3d g" id="bk">⬅ العودة إلى اللعبة</button>
-   <span style="display:flex;gap:10px;flex-wrap:wrap"><button class="b3d o" id="csv">⬇ تنزيل Excel (CSV)</button>${rConfirm?`<span class="confirm">حذف كل النتائج نهائيًا؟ <button class="b3d p" id="yes">نعم، احذف</button><button class="b3d g" id="no">إلغاء</button></span>`:`<button class="b3d p" id="clr">🗑 مسح النتائج</button>`}</span></div>
+   <span style="display:flex;gap:10px;flex-wrap:wrap"><button class="b3d o" id="csv">⬇ تنزيل Excel (CSV)</button><button class="b3d p" id="tpw">🔑 كلمة السر</button>${rConfirm?`<span class="confirm">حذف كل النتائج نهائيًا؟ <button class="b3d p" id="yes">نعم، احذف</button><button class="b3d g" id="no">إلغاء</button></span>`:`<button class="b3d p" id="clr">🗑 مسح النتائج</button>`}</span></div>
   <p class="note" id="msg"></p></div></div>`;
  app.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{rTab=b.dataset.t;results()});
  document.getElementById('bk').onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}stopLive();home()};
- document.getElementById('csv').onclick=()=>exportCsv(all);
+ document.getElementById('csv').onclick=()=>exportCsv(all);document.getElementById('tpw').onclick=()=>{if(window.KIT&&KIT.changePin)KIT.changePin()};
  const clr=document.getElementById('clr');if(clr)clr.onclick=()=>{rConfirm=true;results()};
  const no=document.getElementById('no');if(no)no.onclick=()=>{rConfirm=false;results()};
  const yes=document.getElementById('yes');if(yes)yes.onclick=async()=>{yes.disabled=true;
