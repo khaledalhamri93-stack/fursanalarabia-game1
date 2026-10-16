@@ -192,6 +192,33 @@ h3.pick{font-family:var(--disp);font-weight:400;font-size:26px;text-align:center
 @keyframes up{to{transform:translateY(-70px);opacity:0}}
 @media (max-width:600px){.answers{grid-template-columns:1fr}.worlds{gap:10px}.world .nm{font-size:20px}.world .ic{font-size:36px}.pill.nm{max-width:100%}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ===== منصّة الأبطال ===== */
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-items:end;margin:16px auto 0;max-width:560px}
+.pcol{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;min-width:0}
+.pava{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font-size:30px;font-weight:900;color:#fff;border:4px solid #ffd34e;box-shadow:0 6px 0 rgba(0,0,0,.25);animation:phop 1.6s ease-in-out infinite}
+.pcol.first .pava{width:90px;height:90px;font-size:38px;border-color:#f2c230;box-shadow:0 0 0 5px rgba(242,194,48,.35),0 6px 0 rgba(0,0,0,.25)}
+.pcol:nth-child(1) .pava{animation-delay:.25s}.pcol:nth-child(3) .pava{animation-delay:.5s}
+@keyframes phop{50%{transform:translateY(-6px)}}
+.pn{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.pblk{width:100%;border-radius:12px 12px 0 0;background:linear-gradient(180deg,var(--pc),rgba(0,0,0,.2)),var(--pc);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:8px;box-shadow:inset 0 4px 0 rgba(255,255,255,.35)}
+.pm{font-size:28px}.pr{font-size:30px;font-weight:900;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.lbtabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.lbt{font:inherit;font-weight:900;font-size:14px;border:2px solid rgba(255,255,255,.35);border-radius:999px;padding:4px 12px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}
+.lbt.on{background:#ffd34e;color:#1d2b3a;border-color:#ffd34e}
+.lbt:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.lbme{margin:12px auto 0;max-width:560px;text-align:center;background:rgba(0,0,0,.3);border:2px solid rgba(255,211,78,.5);border-radius:14px;padding:6px 10px;font-weight:800;font-size:14.5px}.lbme b{color:#ffd34e}
+.lbtable{margin:14px auto 0;max-width:640px;background:#fffdf7;color:#1d2b3a;border-radius:16px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.lbr{display:grid;grid-template-columns:38px 1fr 58px 36px 36px 36px;align-items:center;gap:4px;padding:7px 8px;border-bottom:1px solid rgba(0,0,0,.07);font-weight:800;font-size:14px;text-align:center}
+.lbr:last-child{border-bottom:0}.lbh{background:#0b6e75;color:#fff}
+.lbr .nm{display:flex;align-items:center;gap:6px;text-align:start;min-width:0}.lbr .nm b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbr .sc{color:#c0392b;font-weight:900}.lbr .rk{font-size:16px}
+.mav{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:900;flex:none}
+.lbr.t1{background:#fff3c4}.lbr.t2{background:#eef1f4}.lbr.t3{background:#f8e5d6}
+.lbr.me{outline:3px solid #1e88e5;outline-offset:-3px;background:#e3f2fd}
+.lbnote{max-width:640px;margin:12px auto 0;text-align:center;background:rgba(0,0,0,.3);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700;line-height:1.8}
+.podbtn{font-size:20px!important;padding:10px 26px!important}
+@media (prefers-reduced-motion:reduce){.pava{animation:none}}
 </style>
 </head>
 <body>
@@ -573,6 +600,47 @@ let ac;function beep(kind){try{ac=ac||new (window.AudioContext||window.webkitAud
  seq.forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;o.connect(g);g.connect(window.SND?SND.out(ac):ac.destination);const s=t+i*.09;g.gain.setValueAtTime(.16,s);g.gain.exponentialRampToValueAtTime(.001,s+.22);o.start(s);o.stop(s+.24)})}catch(e){}}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+/* ================= منصّة الأبطال (يراها الطلاب) ================= */
+const PCOL=['#0f9d9a','#ff8a3d','#6c5ce7','#e84393','#1e88e5','#2ecc71','#c0392b','#8e44ad','#16a085','#d35400'];
+const pcolOf=n=>{let h=0;for(const ch of String(n))h=(h*31+ch.charCodeAt(0))>>>0;return PCOL[h%PCOL.length]};
+const initial=n=>esc(String(n).trim().replace(/^(ال)/,'').charAt(0)||'؟');
+function ranking(all,opt){
+ opt=opt||{};const since=opt.week?Date.now()-7*864e5:0;
+ const rows=all.filter(r=>r&&r.name&&(r.at||0)>=since&&(opt.lesson==null||String(r.lesson)===String(opt.lesson)));
+ const best={},P={};
+ rows.forEach(r=>{const k=r.name+'|'+r.lesson+'|'+r.mode;const b=best[k];if(!b||(r.correct||0)>(b.correct||0)||((r.correct||0)===(b.correct||0)&&(r.points||0)>(b.points||0)))best[k]=r;
+  const o=P[r.name]=P[r.name]||{name:r.name,score:0,stars:0,games:0,streak:0};o.games++;o.streak=Math.max(o.streak,r.streak||0)});
+ Object.values(best).forEach(r=>{const o=P[r.name],t=r.total||10,c=r.correct||0,q=c/t,st=q>=.9?3:q>=.7?2:q>=.5?1:0;o.stars+=st;o.score+=c*10+st*5});
+ return Object.values(P).map(o=>Object.assign(o,{score:o.score+Math.min(o.streak,10)*2})).sort((a,b)=>b.score-a.score||b.stars-a.stars||a.name.localeCompare(b.name,'ar'));
+}
+let lbTab='all';
+async function podium(back){
+ app.innerHTML=`<div class="screen"><p class="lbnote">⏳ جارٍ تحميل الأبطال…</p></div>`;
+ const all=(await loadResults()).filter(r=>r&&r.name);
+ const draw=()=>{
+  const rk=ranking(all,{week:lbTab==='week',lesson:/^\d$/.test(lbTab)?+lbTab:null});
+  const top=[rk[1],rk[0],rk[2]],H=[110,150,84],M=['🥈','🥇','🥉'],C=['#c9d1d9','#f2c230','#d08a4e'],Pn=[2,1,3];
+  const me=rk.findIndex(r=>r.name===player);
+  const tabs=[['all','🏆 الكل'],['week','📅 هذا الأسبوع'],...WORLDS.map((w,i)=>[String(i),w.icon+' '+(w.mix?'التحدي':w.short)])];
+  app.innerHTML=`<div class="screen">
+   <h1 style="text-align:center;margin:6px 0 0;font-size:clamp(26px,7vw,36px)">🏆 منصّة الأبطال</h1>
+   <p style="text-align:center;margin:4px 0 0;font-weight:700">تنافس مع زملائك واصعد إلى القمة!</p>
+   <div class="lbtabs" role="tablist">${tabs.map(([k,t])=>`<button role="tab" aria-selected="${lbTab===k}" class="lbt ${lbTab===k?'on':''}" data-t="${k}">${t}</button>`).join('')}</div>
+   ${me>=0?`<div class="lbme">${me===0?'👑 أنت في المركز الأول! حافظ على الصدارة':`مركزك: <b>${AR(me+1)}</b> من ${AR(rk.length)} • ينقصك <b>${AR(rk[me-1].score-rk[me].score+1)}</b> نقطة لتتجاوز ${esc(rk[me-1].name)}`}</div>`:(player?`<div class="lbme">العب لعبة لتظهر على المنصّة يا ${esc(player)}!</div>`:'')}
+   ${rk.length?`<div class="podium">${top.map((r,k)=>`<div class="pcol ${k===1?'first':''}">${r?`<div class="pava" style="background:${pcolOf(r.name)}">${initial(r.name)}</div><b class="pn">${esc(r.name)}</b><span class="pill">⭐ ${AR(r.score)}</span>`:'<div class="pava" style="background:rgba(255,255,255,.15)">؟</div><b class="pn">—</b>'}
+     <div class="pblk" style="height:${H[k]}px;--pc:${C[k]}"><span class="pm">${M[k]}</span><span class="pr">${AR(Pn[k])}</span></div></div>`).join('')}</div>
+   <div class="lbtable" role="table" aria-label="ترتيب الطلاب">
+    <div class="lbr lbh" role="row"><span>#</span><span>الطالب</span><span title="النقاط">⭐</span><span title="النجوم">★</span><span title="أطول سلسلة">🔥</span><span title="عدد الألعاب">🎮</span></div>
+    ${rk.map((r,k)=>`<div class="lbr ${r.name===player?'me':''} ${k<3?'t'+(k+1):''}" role="row"><span class="rk">${k<3?M[[1,0,2][k]]:AR(k+1)}</span><span class="nm"><span class="mav" style="background:${pcolOf(r.name)}">${initial(r.name)}</span><b>${esc(r.name)}</b></span><span class="sc">${AR(r.score)}</span><span>${AR(r.stars)}</span><span>${AR(r.streak)}</span><span>${AR(r.games)}</span></div>`).join('')}
+   </div>`:`<div class="lbnote" style="font-size:16px">${lbTab==='week'?'لم يلعب أحد هذا الأسبوع بعد.':'لم يلعب أحد بعد.'} كن أول بطل على المنصّة!</div>`}
+   <p class="lbnote">النقاط: ١٠ لكل إجابة صحيحة • ٥ لكل نجمة • ٢ لكل إجابة في أطول سلسلة (حتى ١٠) • تُحسب أفضل محاولة في كل لعبة من كل عالم.${DB?'':'<br>📱 تظهر هنا نتائج من لعبوا على هذا الجهاز.'}</p>
+   <div class="btns"><button class="b3d" id="pbk">⬅ رجوع</button></div></div>`;
+  app.querySelectorAll('.lbt').forEach(b=>b.onclick=()=>{lbTab=b.dataset.t;beep('tap');draw()});
+  document.getElementById('pbk').onclick=back||home;
+ };
+ draw();if(all.length){beep('win');confetti()}
+}
+
 function home(){
  stopT();
  const picker=STUDENTS.length
@@ -586,11 +654,12 @@ function home(){
     <span class="lv">${i<3?'العالم '+AR(i+1):'الزعيم'}</span>${best[i]!=null?`<span class="best">⭐ ${AR(best[i])}/١٠</span>`:''}
     <span class="ic">${w.icon}</span><span class="nm">${w.mix?w.name:w.short}</span><span class="sub">${w.mix?'أسئلة مختلطة من الدروس الثلاثة':w.name}</span></button>`).join('')}</div>
   <div class="opts-row"><button class="toggle" id="tm" aria-pressed="${useTimer}">⏱️ مؤقت ${AR(TIME)} ثانية</button><button class="teacher" id="tch">📊 نتائج الطلاب (للمعلم)</button></div>
+  <div class="btns" style="margin-top:12px"><button class="b3d o podbtn" id="pod">🏆 منصّة الأبطال</button></div>
   <div class="credits"><span>معلم اللغة العربية: أ. خالد الحمري</span><span>مدير المدرسة: أ. حمود أحمد</span></div></div>`;
  const pl=document.getElementById('pl');
  const bindBdg=()=>{const b=document.getElementById('bdg');if(b)b.onclick=badgeCase};bindBdg();
  pl.onchange=pl.oninput=()=>{player=pl.value.trim();document.getElementById('warn').hidden=true;try{localStorage.setItem('mu3tal-player',player)}catch(e){}document.getElementById('pcard').innerHTML=playerCard();bindBdg()};
- document.getElementById('tch').onclick=pinGate;
+ document.getElementById('tch').onclick=pinGate;document.getElementById('pod').onclick=()=>podium(home);
  document.getElementById('tm').onclick=e=>{useTimer=!useTimer;e.currentTarget.setAttribute('aria-pressed',useTimer)};
  app.querySelectorAll('.world').forEach(b=>b.onclick=()=>{player=pl.value.trim();if(!player){document.getElementById('warn').hidden=false;pl.focus();beep('no');return}modes(+b.dataset.i)});
 }
