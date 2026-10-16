@@ -238,6 +238,12 @@ h3.pick{font-family:var(--disp);font-weight:400;font-size:26px;text-align:center
 .kin,.kpw{font:inherit;font-weight:800;border:3px solid #2b1a0e;border-radius:10px;padding:5px 10px;color:#1d2b3a;background:#fff;min-width:0;flex:1}
 .kpw{display:block;width:200px;max-width:100%;margin:10px auto 0;text-align:center;font-size:24px;letter-spacing:6px}
 .kcimg{display:block;width:100%;height:auto;border-radius:10px;border:3px solid #2b1a0e;margin-top:10px;-webkit-touch-callout:default}
+#kitStart{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:rgba(10,25,50,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);transition:opacity .3s;direction:rtl}
+#kitStart.out{opacity:0;pointer-events:none}
+#kitStart button{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:Cairo,Tahoma,sans-serif;background:#ffd34e;color:#1d2b3a;border:4px solid #2b1a0e;border-radius:24px;padding:22px 44px;box-shadow:0 8px 0 #2b1a0e;cursor:pointer;animation:kPulse 1.2s ease-in-out infinite}
+#kitStart .ki{font-size:54px;line-height:1}#kitStart b{font-size:30px;font-weight:900}#kitStart small{font-size:15px;font-weight:700;opacity:.8}
+@keyframes kPulse{50%{transform:scale(1.06)}}
+@media (prefers-reduced-motion:reduce){#kitStart button{animation:none}}
 </style>
 <script>window.KIT_CFG={"id": "verb", "prefix": ["mu3tal-"], "title": "مغامرة الفعل المعتل", "fem": false, "accent": "#0f9d9a", "accent2": "#ff8a3d", "sign": ["معلم اللغة العربية: أ. خالد الحمري", "مدير المدرسة: أ. حمود أحمد"]};
 /* ===== عُدّة مشتركة: الصوت والموسيقى والإعدادات والنسخ الاحتياطي والشهادات ===== */
@@ -425,7 +431,13 @@ async function certificate(o){
  $k('kCDl').onclick=()=>cv.toBlob(async b=>{const ok=await saveFile(`شهادة_${o.name.replace(/\s+/g,'_')}.png`,b);$k('kCMsg').textContent=ok?'✅ تم تنزيل الشهادة':'تعذّر التنزيل من هنا. يمكنك الضغط مطوّلًا على الصورة لحفظها.'},'image/png');
 }
 window.KIT={certificate,openSettings,toast,settings:()=>Object.assign({},S)};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bar);else bar();
+/* تشغيل الموسيقى فور فتح الرابط: نحاول مباشرة، وإن منعها المتصفح نعرض شاشة بدء تُشغّلها بأول لمسة */
+function autoStart(){bar();if(vMus()===0)return;musicStart();
+ setTimeout(()=>{if(isPlaying()||$k('kitStart'))return;const d=document.createElement('div');d.id='kitStart';
+  d.innerHTML=`<button type="button"><span class="ki">🎵</span><b>اضغط للبدء</b><small>${C.title||''}</small></button>`;
+  const go=()=>{gesture();setTimeout(()=>{if(isPlaying())toast('🎵 الموسيقى تعمل — يمكنك إيقافها من زر 🔊')},600);d.classList.add('out');setTimeout(()=>d.remove(),350)};
+  d.addEventListener('click',go);document.body.appendChild(d);try{d.querySelector('button').focus()}catch(e){}},350)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',autoStart);else autoStart();
 })();
 </script>
 <script>
