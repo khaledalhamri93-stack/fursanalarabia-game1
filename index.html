@@ -244,6 +244,14 @@ h3.pick{font-family:var(--disp);font-weight:400;font-size:26px;text-align:center
 #kitStart .ki{font-size:54px;line-height:1}#kitStart b{font-size:30px;font-weight:900}#kitStart small{font-size:15px;font-weight:700;opacity:.8}
 @keyframes kPulse{50%{transform:scale(1.06)}}
 @media (prefers-reduced-motion:reduce){#kitStart button{animation:none}}
+.kopts{border:0;margin:6px 0;padding:0;display:grid;gap:8px}.kopts legend{padding:0;margin-bottom:6px}
+.kopt{display:flex;gap:10px;align-items:flex-start;border:3px solid #2b1a0e;border-radius:12px;padding:8px 10px;background:#fff;cursor:pointer}
+.kopt input{margin-top:5px;width:20px;height:20px;accent-color:#c0392b;flex:none}.kopt span{display:flex;flex-direction:column}.kopt b{font-size:15.5px}.kopt small{font-size:13px;font-weight:600;color:#5b4a3a;line-height:1.6}
+.kopt:has(input:checked){background:#fff3c4;border-color:#c0392b}
+.kopts{border:0;margin:6px 0;padding:0;display:grid;gap:8px}.kopts legend{padding:0;margin-bottom:6px}
+.kopt{display:flex;gap:10px;align-items:flex-start;border:3px solid #2b1a0e;border-radius:12px;padding:8px 10px;background:#fff;cursor:pointer}
+.kopt input{margin-top:5px;width:20px;height:20px;accent-color:#c0392b;flex:none}.kopt span{display:flex;flex-direction:column}.kopt b{font-size:15.5px}.kopt small{font-size:13px;font-weight:600;color:#5b4a3a;line-height:1.6}
+.kopt:has(input:checked){background:#fff3c4;border-color:#c0392b}
 </style>
 <script>window.KIT_CFG={"id": "verb", "prefix": ["mu3tal-"], "title": "مغامرة الفعل المعتل", "fem": false, "accent": "#0f9d9a", "accent2": "#ff8a3d", "sign": ["معلم اللغة العربية: أ. خالد الحمري", "مدير المدرسة: أ. حمود أحمد"]};
 /* ===== عُدّة مشتركة: الصوت والموسيقى والإعدادات والنسخ الاحتياطي والشهادات ===== */
@@ -385,12 +393,26 @@ function openBackup(){
   }catch(err){$k('kBakMsg').textContent='هذا الملف ليس نسخة احتياطية من '+C.title+'.'}};r.readAsText(f);e.target.value=''};
 }
 function openDefaults(){
+ const who=C.fem?'الطالبات':'الطلاب';
  modal(`<div class="khead"><h2>♻️ الإعدادات الأصلية</h2><button class="kx" id="kClose" aria-label="إغلاق">✖</button></div>
-   <p class="kmeta">يعيد الصوت والموسيقى والإضاءة إلى ما كانت عليه أول مرة، ولا يمسح تقدّم ${C.fem?'الطالبات':'الطلاب'} ولا يغيّر كلمة سر المعلم.</p>
-   <div class="krow" id="kDefRow"><button class="kb p" id="kDef">♻️ الرجوع إلى الإعدادات الأصلية</button></div>`);
- $k('kClose').onclick=closeModal;
- $k('kDef').onclick=()=>{$k('kDefRow').innerHTML='<span class="kmeta">متأكد؟</span> <button class="kb p" id="kDefY">نعم</button> <button class="kb g" id="kDefN">إلغاء</button>';
-  $k('kDefN').onclick=openDefaults;$k('kDefY').onclick=()=>{S=Object.assign({},DEF,{pw:S.pw});save();apply();closeModal();toast('♻️ أُعيدت الإعدادات الأصلية')}};
+  <fieldset class="kopts"><legend class="kmeta">ماذا تريد أن تعيد؟</legend>
+   <label class="kopt"><input type="radio" name="kDefT" value="av" checked><span><b>🔊☀️ الصوت والإضاءة فقط</b><small>تعود الموسيقى والمؤثرات والسطوع كما كانت أول مرة، ويبقى تقدّم ${who}.</small></span></label>
+   <label class="kopt"><input type="radio" name="kDefT" value="all"><span><b>🧹 جميع الإعدادات</b><small>الصوت والإضاءة، مع مسح تقدّم ${who} على هذا الجهاز: الشخصيات والعوالم والنجوم والعملات والكنوز والأوسمة والنتائج ولوحة الأبطال.</small></span></label>
+  </fieldset>
+  <p class="kmeta" id="kDefWarn" hidden>⚠️ لا يمكن التراجع عن مسح التقدّم. يمكنك تنزيل <button class="kb s g" id="kDefBak">💾 نسخة احتياطية</button> أولًا.</p>
+  <div class="kline"><b>كلمة سر المعلم للموافقة</b><input id="kDefPw" type="password" inputmode="numeric" maxlength="20" class="kin" autocomplete="off" aria-label="كلمة سر المعلم"></div>
+  <p id="kDefMsg" class="kerr" aria-live="polite"></p>
+  <div class="krow"><button class="kb g" id="kX">إلغاء</button><button class="kb p" id="kDef">♻️ تنفيذ الرجوع</button></div>`);
+ $k('kClose').onclick=$k('kX').onclick=closeModal;
+ const typ=()=>(document.querySelector('input[name="kDefT"]:checked')||{}).value;
+ document.querySelectorAll('input[name="kDefT"]').forEach(r=>r.onchange=()=>{$k('kDefWarn').hidden=typ()!=='all'});
+ $k('kDefBak').onclick=openBackup;
+ $k('kDef').onclick=()=>{const m=$k('kDefMsg');
+  if(!checkPin($k('kDefPw').value)){m.textContent='كلمة السر غير صحيحة.';$k('kDefPw').value='';return}
+  S=Object.assign({},DEF,{pw:S.pw});save();apply();
+  if(typ()==='all'){try{for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(C.prefix.some(p=>k.startsWith(p)))localStorage.removeItem(k)}}catch(e){}
+   closeModal();toast('🧹 أُعيدت جميع الإعدادات ومُسح التقدّم');setTimeout(()=>location.reload(),1300)}
+  else{closeModal();toast('♻️ أُعيد الصوت والإضاءة')}};
 }
 function openSettings(){
  const sw=(id,on)=>`<button class="ksw ${on?'on':''}" id="${id}" role="switch" aria-checked="${on}"><span></span></button>`;
