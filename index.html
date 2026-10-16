@@ -251,7 +251,7 @@ const $k=id=>document.getElementById(id);
 const AR=n=>String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
 const escH=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const vSfx=()=>S.muted||!S.sfxOn?0:S.master*S.sfx;
-const vMus=()=>S.muted||!S.musicOn?0:S.master*S.music*.45;
+const vMus=()=>S.muted||!S.musicOn?0:S.master*S.music*.75;
 
 /* ---------- المؤثرات: كل لعبة تمرّر صوتها من هنا ---------- */
 const outs=[];
@@ -269,17 +269,29 @@ function note(f,t,d,type,v){const o=mctx.createOscillator(),g=mctx.createGain();
 function hat(t,v){const n=mctx.createBufferSource(),b=mctx.createBuffer(1,mctx.sampleRate*.05,mctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
  const hp=mctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=6000;const g=mctx.createGain();g.gain.value=v;n.buffer=b;n.connect(hp);hp.connect(g);g.connect(mg);n.start(t)}
 function tick(){if(!mctx)return;while(nextT<mctx.currentTime+.25){const i=step%MEL.length;
-  if(MEL[i])note(mid(MEL[i]),nextT,SP*.9,'square',.11);
-  if(BAS[i])note(mid(BAS[i]),nextT,SP*1.6,'triangle',.22);
-  if(i%2===0)hat(nextT,.05);
+  if(MEL[i])note(mid(MEL[i]),nextT,SP*.9,'square',.16);
+  if(BAS[i])note(mid(BAS[i]),nextT,SP*1.6,'triangle',.3);
+  if(i%2===0)hat(nextT,.07);
   nextT+=SP;step++}}
 function musicStart(){
  if(vMus()===0)return musicPause();
  try{if(!mctx){mctx=new (window.AudioContext||window.webkitAudioContext)();mg=mctx.createGain();mg.gain.value=vMus();mg.connect(mctx.destination);nextT=mctx.currentTime+.1}
-  if(mctx.state!=='running')mctx.resume();if(!timer)timer=setInterval(tick,60);started=true}catch(e){}}
+  if(mctx.state!=='running'){const r=mctx.resume();if(r&&r.then)r.then(()=>{nextT=Math.max(nextT,mctx.currentTime+.05)})}if(!timer){nextT=Math.max(nextT,mctx.currentTime+.05);timer=setInterval(tick,60);if(!window.__kitMusToast){window.__kitMusToast=1;setTimeout(()=>{if(isPlaying())toast('🎵 الموسيقى تعمل — يمكنك إيقافها من زر 🔊')},500)}}started=true}catch(e){}}
 function musicPause(){if(timer){clearInterval(timer);timer=null}if(mctx&&mctx.state==='running')mctx.suspend()}
-const gesture=()=>{if(!started&&vMus()>0)musicStart()};
-['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,gesture,{passive:true}));
+function isPlaying(){return !!(mctx&&mctx.state==='running'&&timer)}
+/* آيفون: يُفتح الصوت فقط داخل لمسة حقيقية (رفع الإصبع أو النقر)، ويجب تجاوز زر الصامت */
+let silentEl=null;
+function silentWav(){const sr=8000,n=800,b=new ArrayBuffer(44+n*2),v=new DataView(b),w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
+ w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+ return URL.createObjectURL(new Blob([b],{type:'audio/wav'}))}
+function unlockAudio(){
+ try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
+ try{if(!silentEl){silentEl=new Audio(silentWav());silentEl.loop=true;silentEl.setAttribute('playsinline','');silentEl.volume=0.01}const pr=silentEl.play();if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}
+ if(mctx&&mctx.state!=='running')try{mctx.resume()}catch(e){}
+ outs.forEach(g=>{try{if(g.context.state!=='running')g.context.resume()}catch(e){}});
+}
+const gesture=()=>{unlockAudio();if(vMus()>0&&(!mctx||mctx.state!=='running'||!timer))musicStart()};
+['pointerup','touchend','click','keydown'].forEach(ev=>addEventListener(ev,gesture,{passive:true,capture:true}));
 document.addEventListener('visibilitychange',()=>{if(document.hidden)musicPause();else if(started&&vMus()>0)musicStart()});
 
 function apply(){
@@ -292,7 +304,7 @@ function apply(){
 function testSfx(){let c;try{c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){return}const out=SND.out(c);
  [523,659,784,1046].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.value=f;o.connect(g);g.connect(out);const t=c.currentTime+i*.1;g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.start(t);o.stop(t+.22)});
  setTimeout(()=>{try{c.close()}catch(e){}},1200)}
-function testMusic(){const was=started;musicStart();started=true;if(vMus()===0)toast('موسيقى الخلفية مغلقة أو مستواها صفر')}
+function testMusic(){unlockAudio();started=true;musicStart();setTimeout(()=>{if(vMus()===0)toast('موسيقى الخلفية مغلقة أو مستواها صفر');else if(!isPlaying())toast('لم يعمل الصوت. تأكد من رفع صوت الجهاز')},400)}
 
 /* ---------- حفظ ملف للجهاز ---------- */
 async function saveFile(name,blob){
@@ -305,7 +317,7 @@ function toast(t){let d=$k('kitToast');if(!d){d=document.createElement('div');d.
 function bar(){if($k('kitBar'))return;const b=document.createElement('div');b.id='kitBar';
  b.innerHTML='<button id="kitMute" aria-label="كتم الصوت">🔊</button><button id="kitGear" aria-label="الإعدادات">⚙️</button>';
  document.body.appendChild(b);
- $k('kitMute').onclick=e=>{e.stopPropagation();S.muted=!S.muted;save();apply();if(!S.muted){started=true;musicStart()}toast(S.muted?'🔇 تم كتم الصوت':'🔊 تم تشغيل الصوت')};
+ $k('kitMute').onclick=e=>{e.stopPropagation();S.muted=!S.muted;save();apply();if(!S.muted){unlockAudio();started=true;musicStart()}toast(S.muted?'🔇 تم كتم الصوت':'🔊 تم تشغيل الصوت')};
  $k('kitGear').onclick=e=>{e.stopPropagation();openSettings()};apply()}
 
 /* ---------- نافذة ---------- */
