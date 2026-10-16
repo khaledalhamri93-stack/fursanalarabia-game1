@@ -384,6 +384,14 @@ function openBackup(){
     Object.entries(data.keys).forEach(([k,v])=>{try{localStorage.setItem(k,v)}catch(e){}});row.textContent='✅ تم الاسترجاع. ستُعاد تحميل اللعبة…';setTimeout(()=>location.reload(),1200)};
   }catch(err){$k('kBakMsg').textContent='هذا الملف ليس نسخة احتياطية من '+C.title+'.'}};r.readAsText(f);e.target.value=''};
 }
+function openDefaults(){
+ modal(`<div class="khead"><h2>♻️ الإعدادات الأصلية</h2><button class="kx" id="kClose" aria-label="إغلاق">✖</button></div>
+   <p class="kmeta">يعيد الصوت والموسيقى والإضاءة إلى ما كانت عليه أول مرة، ولا يمسح تقدّم ${C.fem?'الطالبات':'الطلاب'} ولا يغيّر كلمة سر المعلم.</p>
+   <div class="krow" id="kDefRow"><button class="kb p" id="kDef">♻️ الرجوع إلى الإعدادات الأصلية</button></div>`);
+ $k('kClose').onclick=closeModal;
+ $k('kDef').onclick=()=>{$k('kDefRow').innerHTML='<span class="kmeta">متأكد؟</span> <button class="kb p" id="kDefY">نعم</button> <button class="kb g" id="kDefN">إلغاء</button>';
+  $k('kDefN').onclick=openDefaults;$k('kDefY').onclick=()=>{S=Object.assign({},DEF,{pw:S.pw});save();apply();closeModal();toast('♻️ أُعيدت الإعدادات الأصلية')}};
+}
 function openSettings(){
  const sw=(id,on)=>`<button class="ksw ${on?'on':''}" id="${id}" role="switch" aria-checked="${on}"><span></span></button>`;
  const sl=(id,v,min,max)=>`<input type="range" id="${id}" min="${min}" max="${max}" value="${Math.round(v*100)}" class="ksl">`;
@@ -397,18 +405,14 @@ function openSettings(){
   <section><h3>☀️ الإضاءة</h3>
    <div class="kline"><b>سطوع الشاشة</b>${sl('kBright',S.bright,50,130)}<span id="kBrightV">${AR(Math.round(S.bright*100))}٪</span></div>
   </section>
-  <section><h3>♻️ الإعدادات الأصلية</h3>
-   <p class="kmeta">يعيد الصوت والموسيقى والإضاءة إلى ما كانت عليه أول مرة، ولا يمسح تقدّم ${C.fem?'الطالبات':'الطلاب'}.</p>
-   <div class="krow" id="kDefRow"><button class="kb p" id="kDef">♻️ الرجوع إلى الإعدادات الأصلية</button></div>
-  </section>`,'kset');
+`,'kset');
  const bindSw=(id,key,after)=>{$k(id).onclick=()=>{S[key]=!S[key];$k(id).classList.toggle('on',S[key]);$k(id).setAttribute('aria-checked',S[key]);save();apply();after&&after()}};
  bindSw('kMuted','muted',()=>{if(!S.muted)musicStart()});bindSw('kSfxOn','sfxOn');bindSw('kMusOn','musicOn',()=>{if(S.musicOn){started=true;musicStart()}});
  const bindSl=(id,key,lab,min)=>{$k(id).oninput=e=>{S[key]=e.target.value/100;if(lab)$k(lab).textContent=AR(e.target.value)+'٪';apply()};$k(id).onchange=save};
  bindSl('kMaster','master','kMasterV');bindSl('kSfx','sfx');bindSl('kMus','music');bindSl('kBright','bright','kBrightV');
  $k('kTSfx').onclick=testSfx;$k('kTMus').onclick=testMusic;
  $k('kClose').onclick=closeModal;
- $k('kDef').onclick=()=>{$k('kDefRow').innerHTML='<span class="kmeta">متأكد؟</span> <button class="kb p" id="kDefY">نعم</button> <button class="kb g" id="kDefN">إلغاء</button>';
-  $k('kDefN').onclick=openSettings;$k('kDefY').onclick=()=>{S=Object.assign({},DEF,{pw:S.pw});save();apply();toast('♻️ أُعيدت الإعدادات الأصلية');openSettings()}};
+
 }
 
 /* ---------- الشهادة ---------- */
@@ -449,7 +453,7 @@ async function certificate(o){
  $k('kClose').onclick=$k('kCX').onclick=closeModal;
  $k('kCDl').onclick=()=>cv.toBlob(async b=>{const ok=await saveFile(`شهادة_${o.name.replace(/\s+/g,'_')}.png`,b);$k('kCMsg').textContent=ok?'✅ تم تنزيل الشهادة':'تعذّر التنزيل من هنا. يمكنك الضغط مطوّلًا على الصورة لحفظها.'},'image/png');
 }
-window.KIT={checkPin,changePin,openBackup,track:setTrack,certificate,openSettings,toast,settings:()=>Object.assign({},S)};
+window.KIT={checkPin,changePin,openBackup,openDefaults,track:setTrack,certificate,openSettings,toast,settings:()=>Object.assign({},S)};
 /* تشغيل الموسيقى فور فتح الرابط: نحاول مباشرة، وإن منعها المتصفح نعرض شاشة بدء تُشغّلها بأول لمسة */
 function autoStart(){bar();if(vMus()===0)return;musicStart();
  setTimeout(()=>{if(isPlaying()||$k('kitStart'))return;const d=document.createElement('div');d.id='kitStart';
@@ -1010,11 +1014,11 @@ async function results(){
   <div class="tabs" role="tablist">${tabs.map(([k,t])=>`<button class="tab" role="tab" data-t="${k}" aria-selected="${rTab===k}">${t}</button>`).join('')}</div>
   ${body}
   <div class="tools"><button class="b3d g" id="bk">⬅ العودة إلى اللعبة</button>
-   <span style="display:flex;gap:10px;flex-wrap:wrap"><button class="b3d o" id="csv">⬇ تنزيل Excel (CSV)</button><button class="b3d p" id="tpw">🔑 كلمة السر</button><button class="b3d g" id="tbak">💾 النسخة الاحتياطية</button>${rConfirm?`<span class="confirm">حذف كل النتائج نهائيًا؟ <button class="b3d p" id="yes">نعم، احذف</button><button class="b3d g" id="no">إلغاء</button></span>`:`<button class="b3d p" id="clr">🗑 مسح النتائج</button>`}</span></div>
+   <span style="display:flex;gap:10px;flex-wrap:wrap"><button class="b3d o" id="csv">⬇ تنزيل Excel (CSV)</button><button class="b3d p" id="tpw">🔑 كلمة السر</button><button class="b3d g" id="tbak">💾 النسخة الاحتياطية</button><button class="b3d o" id="tdef">♻️ الإعدادات الأصلية</button>${rConfirm?`<span class="confirm">حذف كل النتائج نهائيًا؟ <button class="b3d p" id="yes">نعم، احذف</button><button class="b3d g" id="no">إلغاء</button></span>`:`<button class="b3d p" id="clr">🗑 مسح النتائج</button>`}</span></div>
   <p class="note" id="msg"></p></div></div>`;
  app.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{rTab=b.dataset.t;results()});
  document.getElementById('bk').onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}stopLive();home()};
- document.getElementById('csv').onclick=()=>exportCsv(all);document.getElementById('tpw').onclick=()=>{if(window.KIT&&KIT.changePin)KIT.changePin()};document.getElementById('tbak').onclick=()=>{if(window.KIT&&KIT.openBackup)KIT.openBackup()};
+ document.getElementById('csv').onclick=()=>exportCsv(all);document.getElementById('tpw').onclick=()=>{if(window.KIT&&KIT.changePin)KIT.changePin()};document.getElementById('tbak').onclick=()=>{if(window.KIT&&KIT.openBackup)KIT.openBackup()};document.getElementById('tdef').onclick=()=>{if(window.KIT&&KIT.openDefaults)KIT.openDefaults()};
  const clr=document.getElementById('clr');if(clr)clr.onclick=()=>{rConfirm=true;results()};
  const no=document.getElementById('no');if(no)no.onclick=()=>{rConfirm=false;results()};
  const yes=document.getElementById('yes');if(yes)yes.onclick=async()=>{yes.disabled=true;
